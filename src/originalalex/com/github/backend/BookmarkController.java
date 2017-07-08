@@ -18,6 +18,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import originalalex.com.github.display.Main;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -34,20 +35,15 @@ public class BookmarkController {
     @FXML
     private Text status;
 
-    private Map<Text, String> textAndUrl;
+    private static Map<String, String> textAndUrl = new LinkedHashMap<String, String>();
 
     @FXML
     public void add() { // called when the button is hit
         String urlText = url.getText();
-        urlText = (urlText.contains("http://wwww.") || urlText.contains("http://www.")) ? urlText : "http:/www." + urlText;
+        urlText = (urlText.contains("http://wwww.") || urlText.contains("http://www.")) ? urlText : "http://www." + urlText;
         String nameText = name.getText();
         if (HelperClass.getInstance().isValidURL(urlText)) {
-            VBox bookmarks = Controller.getInstance().getBookmarks();
-            Text entry = new Text(nameText);
-            entry.setFont(Font.font("Arial Black", FontWeight.SEMI_BOLD, 14D)); // add style
-            entry.setFill(Color.FUCHSIA);
-            addListeners(entry, urlText); // add all the required listeners.
-            bookmarks.getChildren().add(bookmarks.getChildren().size()-3, entry);
+            Controller.getInstance().addBookmark(nameText, urlText);
             status.setText("Status: SUCCESS (closing)");
             try {
                 Thread.sleep(500);
@@ -55,32 +51,14 @@ public class BookmarkController {
                 e.printStackTrace();
             }
             ((Stage) name.getScene().getWindow()).close();
+            textAndUrl.put(nameText, urlText);
         } else {
             status.setText("Status: INVALID URL");
         }
     }
 
-    private void addListeners(Text entry, String urlText) {
-        entry.setOnMouseEntered(event -> {
-            Main.getInstance().getScene().setCursor(Cursor.HAND);
-        });
-        entry.setOnMouseExited(event -> {
-            Main.getInstance().getScene().setCursor(Cursor.DEFAULT);
-        });
-        entry.setOnMouseClicked(event -> {
-            TabPane tabs = BrowserTab.getTabs();
-            Tab selected = tabs.getSelectionModel().getSelectedItem();
-            Platform.runLater(() -> { // thread safety!
-                BorderPane bp = (BorderPane) selected.getContent();
-                WebView web = null;
-                if (bp.getCenter() instanceof WebView) {
-                    web = (WebView) bp.getCenter();
-                } else {
-                    web = new WebView();
-                }
-                web.getEngine().load(urlText); // Load the URL to the currently viewed tab
-            });
-        });
-    }
 
+    public static Map<String, String> getTextAndUrl() {
+        return textAndUrl;
+    }
 }

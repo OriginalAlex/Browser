@@ -235,7 +235,6 @@ public class BrowserTab {
     private void initializeWebEngine() {
         webEngine.getLoadWorker().stateProperty().addListener((x, y, z) -> { // Wait until the Web Engine has finished loading the page (z is the state of the operation) [Also called whenever the webview changes pages]
             if (z == Worker.State.SUCCEEDED) {
-                System.out.println(shouldBeAdded);
                 if (shouldBeAdded) {
                     ObservableList<WebHistory.Entry> history = webEngine.getHistory().getEntries();
                     String lastPage;

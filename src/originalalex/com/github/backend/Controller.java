@@ -1,8 +1,12 @@
 package originalalex.com.github.backend;
 
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -12,14 +16,20 @@ import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import jdk.nashorn.internal.ir.debug.JSONWriter;
 import originalalex.com.github.display.Main;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.Arrays;
+import java.util.Map;
 
 public class Controller {
 
@@ -60,28 +70,86 @@ public class Controller {
         bookmarks.getChildren().add(add);
     }
 
+    private String getNewFileName(File selectedDirectory) {
+        File[] files = selectedDirectory.listFiles();
+        String[] names = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            names[i] = files[i].getName(); // Create an array of names to create the new file (do not want overlap)
+        }
+        String filename;
+        Arrays.sort(names);
+        if (Arrays.binarySearch(names, "bookmark.txt") < 0) {
+            filename = "bookmark";
+        } else {
+            int i = 1;
+            while (Arrays.binarySearch(names, "bookmark" + i + ".txt") > 0) {
+                System.out.println(Arrays.binarySearch(names, "bookmarks" + i + ".txt"));
+                i++;
+            }
+            filename = "bookmark" + i;
+        }
+        return filename;
+    }
+
     private void createSaveBookmarksButton() {
-        Button saveButton = new Button("Save Bookmarks...");
+        Button saveButton = new Button("Save Bookmarks");
         saveButton.setOnAction(event -> {
             DirectoryChooser chooser = new DirectoryChooser();
             File selectedDirectory = chooser.showDialog(Main.getInstance().getPrimaryStage());
-            if (selectedDirectory == null) {
-
-            } else {
-
+            if (selectedDirectory != null) {
+                String filename = getNewFileName(selectedDirectory);
+                BufferedWriter output = null;
+                try {
+                    System.out.println((selectedDirectory.getAbsolutePath() + "\\" + filename + ".txt").replaceAll("\\\\", "/"));
+                    File file = new File((selectedDirectory.getAbsolutePath() + "\\" + filename + ".txt").replaceAll("\\\\", "/")); // it requires 3 escape sequences for some reason lol
+                    output = new BufferedWriter(new FileWriter(file));
+                    Map<String, String> textAndUrl = BookmarkController.getTextAndUrl();
+                    for (Map.Entry<String, String> ent : textAndUrl.entrySet()) {
+                        output.write(ent.getKey() + "???" + ent.getValue() + System.lineSeparator()); // ??? is the seperator to distinguish where the name ends and the URL starts
+                    }
+                    output.flush();
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
         bookmarks.getChildren().add(saveButton);
     }
 
     private void createLoadbookmarksButton() {
-        Button loadButton = new Button("Load Bookmarks...");
+        Button loadButton = new Button("Load Bookmarks");
         loadButton.setOnAction(event -> {
             FileChooser selector = new FileChooser();
             selector.setTitle("Choose Bookmark File");
             selector.setInitialDirectory(new File(System.getProperty("user.home"))); // Set to "home" of the CPU by default
-            selector.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON File", "*.json"));
+            selector.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text File", "*.txt"));
             File chosenFile = selector.showOpenDialog(Main.getInstance().getPrimaryStage());
+            if (chosenFile != null) {
+                try {
+                    BufferedReader reader = new BufferedReader(new FileReader(chosenFile));
+                    String line;
+                    ObservableList<Node> children = bookmarks.getChildren();
+                    for (int i = 0; i < children.size(); i++) {
+                        Node n = children.get(i);
+                        if (!(n instanceof Region)) { // Region seperates the critical components from the unimportant ones
+                            children.remove(n);
+                        } else {
+                            break;
+                        }
+                    }
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("yo");
+                        String[] parts = line.split("\\?\\?\\?"); // escape
+                        System.out.println(parts[0]);
+                        if (parts.length == 2) {
+                            addBookmark(parts[0], parts[1]);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         });
         bookmarks.getChildren().add(loadButton);
     }
@@ -106,6 +174,38 @@ public class Controller {
         addTab.setClosable(false);
         this.addTab = add;
         tabs.getTabs().add(add);
+    }
+
+    public void addBookmark(String nameText, String urlText) {
+        VBox bookmarks = Controller.getInstance().getBookmarks();
+        Text entry = new Text(nameText);
+        entry.setFont(Font.font("Arial Black", FontWeight.SEMI_BOLD, 14D)); // add style
+        entry.setFill(Color.FUCHSIA);
+        addListeners(entry, urlText); // add all the required listeners.
+        bookmarks.getChildren().add(bookmarks.getChildren().size() - 4, entry);
+    }
+
+    private void addListeners(Text entry, String urlText) {
+        entry.setOnMouseEntered(event -> {
+            Main.getInstance().getScene().setCursor(Cursor.HAND);
+        });
+        entry.setOnMouseExited(event -> {
+            Main.getInstance().getScene().setCursor(Cursor.DEFAULT);
+        });
+        entry.setOnMouseClicked(event -> {
+            TabPane tabs = BrowserTab.getTabs();
+            Tab selected = tabs.getSelectionModel().getSelectedItem();
+            Platform.runLater(() -> { // thread safety!
+                BorderPane bp = (BorderPane) selected.getContent();
+                WebView web = null;
+                if (bp.getCenter() instanceof WebView) {
+                    web = (WebView) bp.getCenter();
+                } else {
+                    web = new WebView();
+                }
+                web.getEngine().load(urlText); // Load the URL to the currently viewed tab
+            });
+        });
     }
 
     public Tab getAddTab() {
