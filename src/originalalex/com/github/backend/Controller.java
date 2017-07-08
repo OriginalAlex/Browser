@@ -3,13 +3,17 @@ package originalalex.com.github.backend;
 import javafx.fxml.FXML;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
+import originalalex.com.github.display.Main;
 
+import java.io.File;
 import java.io.IOException;
 
 public class Controller {
@@ -17,16 +21,29 @@ public class Controller {
     @FXML
     private TabPane tabs;
 
+    @FXML
+    private VBox bookmarks;
+
     private static Controller instance;
     private Tab addTab;
 
     @FXML
     public void initialize() {
         instance = this;
-        tabs.getTabs().clear();
         BrowserTab.setTabs(tabs);
         createAddNewTabButton();
         createNewTab();
+    }
+
+    private void createLoadbookmarksButton() {
+        Button loadButton = new Button("Load Bookmarks...");
+        loadButton.setOnAction(event -> {
+            FileChooser selector = new FileChooser();
+            selector.setTitle("Choose Bookmark File");
+            selector.setInitialDirectory(new File(System.getProperty("user.home"))); // Set to "home" of the CPU by default
+            selector.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("Browser File", "*.browser"));
+            File chosenFile = selector.showOpenDialog(Main.getInstance().getPrimaryStage());
+        });
     }
 
     public void createNewTab() {

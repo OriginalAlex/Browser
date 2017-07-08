@@ -181,7 +181,7 @@ public class BrowserTab {
         searchTerm = term;
         helperClass.changeForwardArrow(false, forwardArrow, resourcesPath);
         helperClass.changeBackArrow(true, backArrow, resourcesPath);
-        Set<SiteInfo> websites = helperClass.amalgamate(term);
+        Set<SiteInfo> websites = helperClass.amalgamate(term.replaceAll(" ", "+"));
         ScrollPane container = new ScrollPane();
         VBox holder = new VBox();
         Tab selected = tabs.getSelectionModel().getSelectedItem();

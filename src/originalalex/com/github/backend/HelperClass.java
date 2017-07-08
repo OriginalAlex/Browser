@@ -22,6 +22,9 @@ public class HelperClass {
     private static final String GOOGLE_URL = "https://www.google.co.uk/search?q="; // After the q= goes the search term (spaces replaced by +)
     private static final String BING_URL = "https://www.bing.com/search?q="; // Same as above
 
+    private List<SiteInfo> googleSites;
+    private List<SiteInfo> bingSites; // Both are global variables so that other threads are able to access and modify them.
+
     /*
     How the amalgamation works:
     for google:
@@ -81,10 +84,25 @@ public class HelperClass {
                 URL: is contained in a site; Description: is contained in a <p>
      */
 
-    public Set<SiteInfo> amalgamate(String keyword) {
-        keyword = keyword.replaceAll(" ", "+"); // for search purposes
-        List<SiteInfo> googleSites = getSeacrchResults(SearchEngine.GOOGLE, keyword, "div.g", "cite", "span.st", "a[href]");
-        List<SiteInfo> bingSites = getSeacrchResults(SearchEngine.BING, keyword, "li.b_algo", "cite", "p", "a[href]");
+    public Set<SiteInfo> amalgamate(final String keyword) { // Final for thread modification
+        long start = System.currentTimeMillis();
+        googleSites = new ArrayList<SiteInfo>();
+        bingSites = new ArrayList<SiteInfo>(); // Must be reset after each usage.
+        Thread getGoogle = new Thread(() -> {
+            googleSites = getSeacrchResults(SearchEngine.GOOGLE, keyword, "div.g", "cite", "span.st", "a[href]");
+        });
+        Thread getBing = new Thread(() -> {
+           bingSites =  getSeacrchResults(SearchEngine.BING, keyword, "li.b_algo", "cite", "p", "a[href]");
+        });
+        getGoogle.start();
+        getBing.start();
+        try {
+            getGoogle.join();
+            getBing.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Took " + (System.currentTimeMillis()-start) + "ms"); // Took 1800ms on average with thread method
         Set<SiteInfo> sites = new LinkedHashSet<SiteInfo>(); // Linked because insertion order must be kept (relevant pages at top), and set to avoid two pages coming up at once.
         for (int i = 0; i < 11; i++) { // Only want 10 elements...
             if (sites.size() < 11 && i < googleSites.size()) {
