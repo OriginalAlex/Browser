@@ -1,24 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.web.WebView?>
 
-<BorderPane prefHeight="200.0" prefWidth="200.0">
+<BorderPane prefHeight="200.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/8.0.102" xmlns:fx="http://javafx.com/fxml/1">
     <top>
-        <HBox BorderPane.alignment="CENTER">
+        <HBox spacing="5.0" BorderPane.alignment="CENTER">
             <children>
                 <ImageView fitHeight="33.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true" />
                 <Region prefHeight="0.0" prefWidth="27.0" />
@@ -29,13 +20,9 @@
             <padding>
                 <Insets bottom="5.0" left="5.0" right="10.0" top="5.0" />
             </padding>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
         </HBox>
     </top>
-    <center>
-        <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-            <children>
-                <WebView prefHeight="200.0" prefWidth="200.0" />
-            </children>
-        </StackPane>
-    </center>
 </BorderPane>

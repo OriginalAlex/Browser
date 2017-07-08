@@ -3,14 +3,19 @@ package originalalex.com.github.backend;
 import javafx.fxml.FXML;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.web.WebView;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import originalalex.com.github.display.Main;
 
 import java.io.File;
@@ -33,6 +38,40 @@ public class Controller {
         BrowserTab.setTabs(tabs);
         createAddNewTabButton();
         createNewTab();
+        createAddBookmarkButton();
+        createSaveBookmarksButton();
+        createLoadbookmarksButton();
+    }
+
+    private void createAddBookmarkButton() {
+        Button add = new Button("Add Bookmark");
+        add.setOnAction(event -> {
+            Stage popup = new Stage();
+            try {
+                Parent root = FXMLLoader.load(getClass().getResource("/originalalex/com/github/display/AddBookmark.fxml"));
+                popup.setScene(new Scene(root));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            popup.getIcons().add(new Image(getClass().getResourceAsStream("/originalalex/com/github/resources/InternetLogo.jpg")));
+            popup.setResizable(false);
+            popup.show();
+        });
+        bookmarks.getChildren().add(add);
+    }
+
+    private void createSaveBookmarksButton() {
+        Button saveButton = new Button("Save Bookmarks...");
+        saveButton.setOnAction(event -> {
+            DirectoryChooser chooser = new DirectoryChooser();
+            File selectedDirectory = chooser.showDialog(Main.getInstance().getPrimaryStage());
+            if (selectedDirectory == null) {
+
+            } else {
+
+            }
+        });
+        bookmarks.getChildren().add(saveButton);
     }
 
     private void createLoadbookmarksButton() {
@@ -41,9 +80,10 @@ public class Controller {
             FileChooser selector = new FileChooser();
             selector.setTitle("Choose Bookmark File");
             selector.setInitialDirectory(new File(System.getProperty("user.home"))); // Set to "home" of the CPU by default
-            selector.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("Browser File", "*.browser"));
+            selector.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON File", "*.json"));
             File chosenFile = selector.showOpenDialog(Main.getInstance().getPrimaryStage());
         });
+        bookmarks.getChildren().add(loadButton);
     }
 
     public void createNewTab() {
@@ -53,15 +93,11 @@ public class Controller {
             ImageView forwardArrow = (ImageView) hbox.getChildren().get(2), backArrow = (ImageView) hbox.getChildren().get(0);
             TextArea urlBar = (TextArea) hbox.getChildren().get(4);
             WebView browser = new WebView();
-            ((StackPane) bp.getCenter()).getChildren().add(browser);
+            bp.setCenter(browser);
             new BrowserTab(bp, urlBar, forwardArrow, backArrow, browser);
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public Tab getAddTab() {
-        return this.addTab;
     }
 
     private void createAddNewTabButton() {
@@ -70,6 +106,14 @@ public class Controller {
         addTab.setClosable(false);
         this.addTab = add;
         tabs.getTabs().add(add);
+    }
+
+    public Tab getAddTab() {
+        return this.addTab;
+    }
+
+    public VBox getBookmarks() {
+        return this.bookmarks;
     }
 
     public static Controller getInstance() {

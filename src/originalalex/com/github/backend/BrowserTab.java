@@ -18,6 +18,7 @@ import javafx.scene.web.WebView;
 import originalalex.com.github.display.Main;
 
 import java.util.LinkedList;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 
@@ -68,7 +69,7 @@ public class BrowserTab {
         tabs = tp;
     }
 
-    public void initialize() {
+    private void initialize() {
         resourcesPath = "/originalalex/com/github/resources/";
         helperClass.changeForwardArrow(false, forwardArrow, resourcesPath);
 
@@ -82,12 +83,12 @@ public class BrowserTab {
     private void addListeners() {
         urlBar.setOnKeyPressed(e -> { // Fired whenever they press a key
             if (e.getCode().equals(KeyCode.ENTER)) { // They pressed the enter key (indicating they want to search for something
-                String input = urlBar.getText();
+                String input = urlBar.getText().trim();
+                e.consume();
                 if (input.trim().equals("")) {
-                    e.consume();
                     return;
                 }
-                String potentialUrl = (input.contains("http://www.")) ? input : "http://www." + input;
+                String potentialUrl = (input.contains("http://www.") || input.contains("https://www.")) ? input : "http://www." + input;
                 if (helperClass.isValidURL(potentialUrl)) {  // It was able to validate the URL
                     updateWebPage(potentialUrl, true);
                     forwardArrow.requestFocus(); // Remove the focus from the URL bar (just to make it look cleaner upon loading a page)
@@ -95,7 +96,6 @@ public class BrowserTab {
                 } else {
                     searchTermEntered(input, true);
                 }
-                e.consume();
             }
         });
 
@@ -147,6 +147,7 @@ public class BrowserTab {
                 String url = pagesBack.pop(); // Remove the last element on the back
                 if (searchTerm == null) { // If the webview is loaded and it is displaying the webview
                     if (helperClass.isValidURL(url)) {
+                        shouldBeAdded = false;
                         updateWebPage(url, false);
                     } else {
                         searchTermEntered(url, false);
@@ -234,6 +235,7 @@ public class BrowserTab {
     private void initializeWebEngine() {
         webEngine.getLoadWorker().stateProperty().addListener((x, y, z) -> { // Wait until the Web Engine has finished loading the page (z is the state of the operation) [Also called whenever the webview changes pages]
             if (z == Worker.State.SUCCEEDED) {
+                System.out.println(shouldBeAdded);
                 if (shouldBeAdded) {
                     ObservableList<WebHistory.Entry> history = webEngine.getHistory().getEntries();
                     String lastPage;
@@ -260,6 +262,10 @@ public class BrowserTab {
         if (clearForward) {
             pagesForward.clear();
         }
+    }
+
+    public static TabPane getTabs() {
+        return tabs;
     }
 }
 
